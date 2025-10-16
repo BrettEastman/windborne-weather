@@ -16,6 +16,15 @@
   let wildfireLayer: LayerGroup | null = null;
   let leafletLoaded = $state(false);
 
+  // Debug: Track prop changes
+  $effect(() => {
+    console.log("Props changed:", {
+      balloonsCount: balloonDatasets.length,
+      satellitesCount: wildfires.length,
+      leafletLoaded,
+    });
+  });
+
   onMount(() => {
     // Initialize map asynchronously
     (async () => {
@@ -120,36 +129,55 @@
     // Clear existing markers
     wildfireLayer.clearLayers();
 
-    console.log(`Rendering ${wildfires.length} wildfire points`);
+    console.log(`Rendering ${wildfires.length} satellite points`);
 
-    // Add markers for each fire
+    let issCount = 0;
+    let starlinkCount = 0;
+
+    // Add markers for each satellite
     wildfires.forEach((fire) => {
-      // Size based on brightness (typical range 300-400K)
-      const size = Math.min(10, Math.max(4, (fire.brightness - 300) / 10));
+      // For satellites: brightness determines size and visibility
+      // ISS has brightness ~380, Starlink ~100-300
+      let size = 5; // Default size
+      let color = "#ef4444"; // Default bright red
 
-      // Color based on confidence
-      const color = fire.confidence >= 80 ? "#dc2626" : "#f97316";
+      // Make ISS much more prominent
+      if (fire.brightness > 350) {
+        size = 14; // Much larger for ISS
+        color = "#dc2626"; // Darker red for ISS
+        issCount++;
+      } else {
+        size = Math.min(8, Math.max(4, fire.brightness / 50));
+        color = "#f87171"; // Lighter red for Starlink
+        starlinkCount++;
+      }
 
       const marker = L.circleMarker([fire.latitude, fire.longitude], {
         radius: size,
         fillColor: color,
-        color: "#7f1d1d",
-        weight: 1,
-        opacity: 0.8,
-        fillOpacity: 0.6,
+        color: "#7f1d1d", // Dark red border
+        weight: 1.5,
+        opacity: 1.0, // Fully opaque border
+        fillOpacity: 0.95, // Very visible fill
       });
 
+      // Show satellite type in popup
+      const satelliteType = fire.brightness > 350 ? "ISS" : "Starlink";
       marker.bindPopup(`
-				<strong>Active Fire</strong><br/>
-				Latitude: ${fire.latitude.toFixed(4)}°<br/>
-				Longitude: ${fire.longitude.toFixed(4)}°<br/>
-				Brightness: ${fire.brightness.toFixed(1)}K<br/>
-				Confidence: ${fire.confidence}%<br/>
-				Detected: ${fire.acq_date} ${fire.acq_time}
-			`);
+        <strong>${satelliteType} Satellite</strong><br/>
+        Latitude: ${fire.latitude.toFixed(4)}°<br/>
+        Longitude: ${fire.longitude.toFixed(4)}°<br/>
+        Brightness: ${fire.brightness.toFixed(0)}<br/>
+        Confidence: ${fire.confidence}%<br/>
+        Time: ${fire.acq_time}
+      `);
 
       wildfireLayer!.addLayer(marker);
     });
+
+    console.log(
+      `Added satellite markers: ISS=${issCount}, Starlink=${starlinkCount}`
+    );
   });
 </script>
 
@@ -165,5 +193,19 @@
   :global(.leaflet-container) {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen,
       Ubuntu, Cantarell, sans-serif;
+  }
+
+  /* Ensure satellite markers are visible */
+  :global(.leaflet-pane) {
+    z-index: 400;
+  }
+
+  :global(.leaflet-marker-pane) {
+    z-index: 600;
+  }
+
+  /* Make circle markers more visible */
+  :global(.leaflet-interactive) {
+    cursor: pointer;
   }
 </style>

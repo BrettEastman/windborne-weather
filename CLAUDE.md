@@ -1,10 +1,10 @@
-# WindBorne Weather Balloon + Wildfire Tracker
+# WindBorne Weather Balloon + Satellite Tracker
 
 ## Project Overview
 
-Build a SvelteKit app that visualizes WindBorne's live weather balloon constellation data alongside active wildfire data using Leaflet maps. This is a job application coding challenge for WindBorne Systems.
+Build a SvelteKit app that visualizes WindBorne's live weather balloon constellation data alongside orbital satellite data (ISS and Starlink) using Leaflet maps. This is a job application coding challenge for WindBorne Systems.
 
-**Mission:** Demonstrate robust data handling, creative problem-solving, and ability to build something meaningful with real-time atmospheric data.
+**Mission:** Demonstrate robust data handling, creative problem-solving, and ability to build something meaningful with real-time atmospheric and space-based data.
 
 ## Tech Stack
 
@@ -19,10 +19,10 @@ Build a SvelteKit app that visualizes WindBorne's live weather balloon constella
 1. Fetch balloon data from `https://a.windbornesystems.com/treasure/XX.json` where XX is 00-23
    - 00.json = current, 23.json = 23 hours ago
    - Creates a 24-hour rolling window
-2. Fetch wildfire data from NASA FIRMS API
+2. Fetch satellite data from real-time APIs (ISS + Starlink constellation)
 3. Robust error handling for corrupted balloon data (they warned us!)
 4. Live updates via polling every 5-10 minutes
-5. Stay well under 1000 requests/hour (we'll use ~300/hour)
+5. Stay well under 1000 requests/hour
 6. Clean, responsive UI
 7. Must be publicly accessible URL
 
@@ -46,13 +46,12 @@ Each balloon entry must pass ALL checks:
 
 Filter out invalid entries and track how many were rejected per file. This shows you're handling corruption properly.
 
-### Wildfire Data
+### Satellite Data
 
-- NASA FIRMS API: https://firms.modaps.eosdis.nasa.gov/
-- May need free API key (check their docs)
-- If so, my API key is dc2b08b88b2888a01a06233aaec18774
-- Returns CSV or JSON with fire locations, brightness, confidence, timestamps
-- Focus on fires from last 24-48 hours
+- ISS API: http://api.open-notify.org/iss-now.json (real-time ISS position)
+- Starlink constellation: Generated based on realistic orbital mechanics patterns
+- Returns real-time positions, brightness, confidence levels
+- Creates beautiful orbital patterns when visualized
 
 ## Project Structure
 
