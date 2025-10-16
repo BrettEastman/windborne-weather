@@ -1,10 +1,5 @@
 import { writable } from "svelte/store";
-import type { SatellitePoint, FetchStatus } from "$lib/types";
-
-interface SatelliteStore {
-  satellites: SatellitePoint[];
-  status: FetchStatus;
-}
+import type { SatellitePoint, SatelliteStore } from "$lib/types";
 
 function createSatelliteStore() {
   const { subscribe, update } = writable<SatelliteStore>({

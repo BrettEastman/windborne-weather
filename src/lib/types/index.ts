@@ -24,3 +24,13 @@ export interface FetchStatus {
   error: string | null;
   lastUpdated: Date | null;
 }
+
+export interface BalloonStore {
+  datasets: BalloonDataset[];
+  status: FetchStatus;
+}
+
+export interface SatelliteStore {
+  satellites: SatellitePoint[];
+  status: FetchStatus;
+}

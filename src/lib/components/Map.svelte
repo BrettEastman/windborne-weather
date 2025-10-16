@@ -3,7 +3,6 @@
   import type { Map as LeafletMap, LayerGroup, CircleMarker } from "leaflet";
   import type { BalloonDataset, SatellitePoint } from "$lib/types";
 
-  // Props using Svelte 5 runes
   let {
     balloonDatasets = [],
     satellites = [],
