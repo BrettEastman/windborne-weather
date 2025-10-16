@@ -1,14 +1,14 @@
 import { writable } from "svelte/store";
-import type { WildfirePoint, FetchStatus } from "$lib/types";
+import type { SatellitePoint, FetchStatus } from "$lib/types";
 
-interface WildfireStore {
-  fires: WildfirePoint[];
+interface SatelliteStore {
+  satellites: SatellitePoint[];
   status: FetchStatus;
 }
 
-function createWildfireStore() {
-  const { subscribe, update } = writable<WildfireStore>({
-    fires: [],
+function createSatelliteStore() {
+  const { subscribe, update } = writable<SatelliteStore>({
+    satellites: [],
     status: {
       loading: false,
       error: null,
@@ -19,9 +19,9 @@ function createWildfireStore() {
   let pollingInterval: number | null = null;
 
   /**
-   * Parse CSV data from NASA FIRMS
+   * Parse CSV data from satellite API
    */
-  function parseCSV(csvText: string): WildfirePoint[] {
+  function parseCSV(csvText: string): SatellitePoint[] {
     const lines = csvText.trim().split("\n");
     if (lines.length < 2) return []; // No data
 
@@ -44,11 +44,11 @@ function createWildfireStore() {
       dateIdx === -1 ||
       timeIdx === -1
     ) {
-      console.error("Missing required columns in FIRMS CSV");
+      console.error("Missing required columns in satellite CSV");
       return [];
     }
 
-    const fires: WildfirePoint[] = [];
+    const satellites: SatellitePoint[] = [];
 
     // Parse data rows
     for (let i = 1; i < lines.length; i++) {
@@ -65,7 +65,7 @@ function createWildfireStore() {
         continue;
       }
 
-      fires.push({
+      satellites.push({
         latitude: lat,
         longitude: lon,
         brightness,
@@ -75,30 +75,30 @@ function createWildfireStore() {
       });
     }
 
-    return fires;
+    return satellites;
   }
 
   /**
-   * Fetch wildfire data from NASA FIRMS
+   * Fetch satellite data from API
    */
-  async function fetchFires(): Promise<void> {
+  async function fetchSatellites(): Promise<void> {
     update((store) => ({
       ...store,
       status: { ...store.status, loading: true, error: null },
     }));
 
     try {
-      const response = await fetch("/api/wildfires");
+      const response = await fetch("/api/satellites");
 
       if (!response.ok) {
-        throw new Error(`FIRMS API returned ${response.status}`);
+        throw new Error(`Satellite API returned ${response.status}`);
       }
 
       const csvText = await response.text();
-      const fires = parseCSV(csvText);
+      const satellites = parseCSV(csvText);
 
       update(() => ({
-        fires,
+        satellites,
         status: {
           loading: false,
           error: null,
@@ -106,11 +106,11 @@ function createWildfireStore() {
         },
       }));
 
-      console.log(`Successfully loaded ${fires.length} wildfire points`);
+      console.log(`Successfully loaded ${satellites.length} satellite points`);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      console.error("Error fetching wildfire data:", error);
+      console.error("Error fetching satellite data:", error);
 
       update((store) => ({
         ...store,
@@ -129,11 +129,11 @@ function createWildfireStore() {
    */
   function startPolling(): () => void {
     // Initial fetch
-    fetchFires();
+    fetchSatellites();
 
     // Poll every 10 minutes (600000ms)
     pollingInterval = window.setInterval(() => {
-      fetchFires();
+      fetchSatellites();
     }, 10 * 60 * 1000);
 
     // Return cleanup function
@@ -147,9 +147,9 @@ function createWildfireStore() {
 
   return {
     subscribe,
-    fetchFires,
+    fetchSatellites,
     startPolling,
   };
 }
 
-export const wildfireData = createWildfireStore();
+export const satelliteData = createSatelliteStore();

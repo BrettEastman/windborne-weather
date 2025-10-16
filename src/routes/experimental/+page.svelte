@@ -1,14 +1,14 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { balloonData } from "$lib/stores/balloonData";
-  import { wildfireData } from "$lib/stores/wildfireData";
+  import { satelliteData } from "$lib/stores/satelliteData";
 
   let cleanupBalloons: (() => void) | null = null;
   let cleanupSatellites: (() => void) | null = null;
 
   onMount(() => {
     cleanupBalloons = balloonData.startPolling();
-    cleanupSatellites = wildfireData.startPolling();
+    cleanupSatellites = satelliteData.startPolling();
 
     return () => {
       cleanupBalloons?.();
@@ -38,7 +38,7 @@
         0
       )}
     </div>
-    <div>Satellites: {$wildfireData.fires.length}</div>
+    <div>Satellites: {$satelliteData.satellites.length}</div>
   </div>
 
   <svg class="map" viewBox="0 0 1000 600">
@@ -49,29 +49,25 @@
     {#each $balloonData.datasets as dataset}
       {#each dataset.points as [lat, lon, alt]}
         {@const { x, y } = projectPoint(lat, lon, 1000, 600)}
-        <circle
-          cx={x}
-          cy={y}
-          r="2"
-          fill="#3b82f6"
-          opacity={1 - dataset.hour / 24}
-          title="Balloon: {lat.toFixed(2)}, {lon.toFixed(2)}"
-        />
+        <g>
+          <circle
+            cx={x}
+            cy={y}
+            r="2"
+            fill="#3b82f6"
+            opacity={1 - dataset.hour / 24}
+          />
+        </g>
       {/each}
     {/each}
 
     <!-- Satellites (red dots) -->
-    {#each $wildfireData.fires as sat}
+    {#each $satelliteData.satellites as sat}
       {@const { x, y } = projectPoint(sat.latitude, sat.longitude, 1000, 600)}
       {@const size = sat.brightness > 350 ? 8 : 4}
-      <circle
-        cx={x}
-        cy={y}
-        r={size}
-        fill="#dc2626"
-        opacity="0.9"
-        title="Satellite: {sat.latitude.toFixed(2)}, {sat.longitude.toFixed(2)}"
-      />
+      <g>
+        <circle cx={x} cy={y} r={size} fill="#dc2626" opacity="0.9" />
+      </g>
     {/each}
   </svg>
 

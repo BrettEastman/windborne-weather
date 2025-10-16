@@ -1,26 +1,26 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import type { Map as LeafletMap, LayerGroup, CircleMarker } from "leaflet";
-  import type { BalloonDataset, WildfirePoint } from "$lib/types";
+  import type { BalloonDataset, SatellitePoint } from "$lib/types";
 
   // Props using Svelte 5 runes
   let {
     balloonDatasets = [],
-    wildfires = [],
-  }: { balloonDatasets?: BalloonDataset[]; wildfires?: WildfirePoint[] } =
+    satellites = [],
+  }: { balloonDatasets?: BalloonDataset[]; satellites?: SatellitePoint[] } =
     $props();
 
   let mapContainer: HTMLDivElement;
   let map: LeafletMap | null = null;
   let balloonLayer: LayerGroup | null = null;
-  let wildfireLayer: LayerGroup | null = null;
+  let satelliteLayer: LayerGroup | null = null;
   let leafletLoaded = $state(false);
 
   // Debug: Track prop changes
   $effect(() => {
     console.log("Props changed:", {
       balloonsCount: balloonDatasets.length,
-      satellitesCount: wildfires.length,
+      satellitesCount: satellites.length,
       leafletLoaded,
     });
   });
@@ -43,7 +43,7 @@
 
       // Create layer groups
       balloonLayer = L.layerGroup().addTo(map);
-      wildfireLayer = L.layerGroup().addTo(map);
+      satelliteLayer = L.layerGroup().addTo(map);
 
       leafletLoaded = true;
     })();
@@ -56,37 +56,16 @@
 
   // Update balloon markers when data changes
   $effect(() => {
-    console.log("Balloon effect triggered", {
-      balloonLayer,
-      leafletLoaded,
-      datasetsLength: balloonDatasets.length,
-    });
-
-    if (!balloonLayer || !leafletLoaded) {
-      console.log(
-        "Skipping balloon render: balloonLayer=",
-        !!balloonLayer,
-        "leafletLoaded=",
-        leafletLoaded
-      );
-      return;
-    }
+    if (!balloonLayer || !leafletLoaded) return;
 
     const L = (window as any).L;
-    if (!L) {
-      console.warn("Leaflet not available in window");
-      return;
-    }
+    if (!L) return;
 
     // Clear existing markers
     balloonLayer.clearLayers();
 
-    const totalPoints = balloonDatasets.reduce(
-      (sum, ds) => sum + ds.points.length,
-      0
-    );
     console.log(
-      `Rendering ${balloonDatasets.length} balloon datasets with ${totalPoints} total points`
+      `Rendering ${balloonDatasets.length} balloon datasets with ${balloonDatasets.reduce((sum, ds) => sum + ds.points.length, 0)} total points`
     );
 
     // Add markers for each dataset
@@ -119,40 +98,40 @@
     console.log("Balloon markers rendered successfully");
   });
 
-  // Update wildfire markers when data changes
+  // Update satellite markers when data changes
   $effect(() => {
-    if (!wildfireLayer || !leafletLoaded) return;
+    if (!satelliteLayer || !leafletLoaded) return;
 
     const L = (window as any).L;
     if (!L) return;
 
     // Clear existing markers
-    wildfireLayer.clearLayers();
+    satelliteLayer.clearLayers();
 
-    console.log(`Rendering ${wildfires.length} satellite points`);
+    console.log(`Rendering ${satellites.length} satellite points`);
 
     let issCount = 0;
     let starlinkCount = 0;
 
     // Add markers for each satellite
-    wildfires.forEach((fire) => {
+    satellites.forEach((sat) => {
       // For satellites: brightness determines size and visibility
       // ISS has brightness ~380, Starlink ~100-300
       let size = 5; // Default size
       let color = "#ef4444"; // Default bright red
 
       // Make ISS much more prominent
-      if (fire.brightness > 350) {
+      if (sat.brightness > 350) {
         size = 14; // Much larger for ISS
         color = "#dc2626"; // Darker red for ISS
         issCount++;
       } else {
-        size = Math.min(8, Math.max(4, fire.brightness / 50));
+        size = Math.min(8, Math.max(4, sat.brightness / 50));
         color = "#f87171"; // Lighter red for Starlink
         starlinkCount++;
       }
 
-      const marker = L.circleMarker([fire.latitude, fire.longitude], {
+      const marker = L.circleMarker([sat.latitude, sat.longitude], {
         radius: size,
         fillColor: color,
         color: "#7f1d1d", // Dark red border
@@ -162,17 +141,17 @@
       });
 
       // Show satellite type in popup
-      const satelliteType = fire.brightness > 350 ? "ISS" : "Starlink";
+      const satelliteType = sat.brightness > 350 ? "ISS" : "Starlink";
       marker.bindPopup(`
         <strong>${satelliteType} Satellite</strong><br/>
-        Latitude: ${fire.latitude.toFixed(4)}°<br/>
-        Longitude: ${fire.longitude.toFixed(4)}°<br/>
-        Brightness: ${fire.brightness.toFixed(0)}<br/>
-        Confidence: ${fire.confidence}%<br/>
-        Time: ${fire.acq_time}
+        Latitude: ${sat.latitude.toFixed(4)}°<br/>
+        Longitude: ${sat.longitude.toFixed(4)}°<br/>
+        Brightness: ${sat.brightness.toFixed(0)}<br/>
+        Confidence: ${sat.confidence}%<br/>
+        Time: ${sat.acq_time}
       `);
 
-      wildfireLayer!.addLayer(marker);
+      satelliteLayer!.addLayer(marker);
     });
 
     console.log(

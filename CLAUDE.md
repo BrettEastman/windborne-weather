@@ -62,13 +62,12 @@ src/
 ├── lib/
 │   ├── stores/
 │   │   ├── balloonData.ts        # Balloon fetching + state management
-│   │   └── wildfireData.ts       # Wildfire fetching + state management
+│   │   └── satelliteData.ts      # Satellite fetching + state management
 │   ├── components/
 │   │   ├── Map.svelte            # Leaflet map component
 │   │   └── Legend.svelte         # Explain what user is seeing
 │   ├── utils/
-│   │   ├── parseBalloons.ts      # Validation logic
-│   │   └── parseWildfires.ts     # Wildfire data parsing
+│   │   └── parseBalloons.ts      # Validation logic
 │   └── types/
 │       └── index.ts              # TypeScript types
 ├── app.css                       # Global styles
@@ -89,7 +88,7 @@ Define clean types for:
 
 - `BalloonPoint`: [lat, lon, altitude] tuple
 - `BalloonDataset`: { hour, points, timestamp, errorCount }
-- `WildfirePoint`: { latitude, longitude, brightness, confidence, acq_date, acq_time }
+- `SatellitePoint`: { latitude, longitude, brightness, confidence, acq_date, acq_time }
 - `FetchStatus`: { loading, error, lastUpdated }
 
 ### Phase 3: Balloon Data Store
@@ -104,35 +103,35 @@ Create a Svelte store that:
 
 **Key insight:** Use `Promise.all()` to fetch all hours simultaneously, then filter out failed requests gracefully.
 
-### Phase 4: Wildfire Data Store
+### Phase 4: Satellite Data Store
 
 Similar pattern to balloon store:
 
-- Fetch from NASA FIRMS
+- Fetch ISS and Starlink constellation data
 - Parse CSV/JSON response
-- Poll every 10 minutes (wildfires update less frequently)
+- Poll every 10 minutes (orbital data updates less frequently)
 - Handle fetch errors gracefully
 
 ### Phase 5: Map Component
 
 - Use dynamic import for Leaflet to avoid SSR issues: `await import('leaflet')`
-- Create two layer groups: one for balloons, one for wildfires
+- Create two layer groups: one for balloons, one for satellites
 - Balloon markers: color/opacity based on age (newer = brighter)
-- Wildfire markers: size based on brightness, color based on confidence
+- Satellite markers: size based on brightness (ISS larger, Starlink smaller)
 - Add popups with relevant data for each marker
 - Use reactive statements (`$:`) to update markers when store data changes
 
 **Visual approach:**
 
 - Balloons: Small blue circles that fade with age (hour 0 = bright, hour 23 = faint)
-- Wildfires: Red circles sized by brightness
+- Satellites: Red circles (ISS larger, Starlink smaller)
 
 ### Phase 6: Main Page
 
 - Initialize both stores on mount with `startPolling()`
 - Clean up intervals on destroy
 - Show loading states and errors gracefully
-- Display stats: total balloon points, active fires, last update time
+- Display stats: total balloon points, active satellites, last update time
 - Include header with title and stats
 - Include footer with data attribution and update frequency
 
@@ -141,7 +140,7 @@ Similar pattern to balloon store:
 Position in bottom right corner showing:
 
 - What balloon markers represent
-- What wildfire markers represent
+- What satellite markers represent (ISS vs Starlink)
 - Brief explanation of why this combination matters
 
 ## Styling Guidelines
@@ -153,14 +152,14 @@ Position in bottom right corner showing:
 - No flashy animations - keep it functional
 - Good contrast and readability
 
-## Why Wildfires?
+## Why Satellites?
 
 This combination tells a story about WindBorne's mission:
 
-- Weather balloons provide atmospheric data
-- Wildfires create unique atmospheric conditions
-- Understanding conditions near fires helps with fire behavior prediction, smoke dispersion, air quality
-- Shows how WindBorne's network could support disaster response and climate science
+- Weather balloons provide atmospheric data from Earth's atmosphere
+- Orbital satellites (ISS and Starlink) provide complementary space-based perspectives
+- Together they showcase different atmospheric and orbital monitoring capabilities
+- Shows how WindBorne's network integrates with global space infrastructure
 
 Include this reasoning in README and submission notes.
 
@@ -169,7 +168,7 @@ Include this reasoning in README and submission notes.
 **Request budget per hour:**
 
 - Balloon data: 24 endpoints × 12 fetches/hour = 288 requests
-- Wildfire data: 1 endpoint × 6 fetches/hour = 6 requests
+- Satellite data: 1 endpoint × 6 fetches/hour = 6 requests
 - **Total: 294 requests/hour** ✓ (well under 1000 limit)
 
 ## Testing Before Submission
@@ -186,14 +185,14 @@ Include this reasoning in README and submission notes.
 
 1. Push to GitHub
 2. Import to Vercel (auto-detects SvelteKit)
-3. Add any needed environment variables (FIRMS API key)
+3. Add any needed environment variables (if needed)
 4. Deploy and verify public access
 
 ## README Must Include
 
 - Live deployment URL
 - Brief description of what it does
-- **Why you chose wildfire data** (shows you understand their mission)
+- **Why you chose satellite data** (shows you understand their mission)
 - Tech stack
 - Data sources with links
 - Local development instructions
@@ -201,8 +200,8 @@ Include this reasoning in README and submission notes.
 ## Submission
 
 **For the `notes` field:**
-Write one sentence about collaboration + one sentence about why wildfires. Example:
-"I enjoy collaborating through clear communication and building solutions that solve real problems. I chose wildfire data because it directly connects to WindBorne's atmospheric monitoring mission—understanding conditions near active fires could improve disaster response and climate science."
+Write one sentence about collaboration + one sentence about why satellites. Example:
+"I enjoy collaborating through clear communication and building solutions that solve real problems. I chose satellite data because it showcases how WindBorne's atmospheric monitoring complements orbital infrastructure—demonstrating integrated Earth systems observation."
 
 **POST request to** `https://windbornesystems.com/career_applications.json`:
 
@@ -212,7 +211,7 @@ Write one sentence about collaboration + one sentence about why wildfires. Examp
     "name": "Brett Eastman",
     "email": "brett.austin.eastman@gmail.com",
     "role": "Junior Web Developer",
-    "notes": "I chose wildfire data because it directly connects to WindBorne's atmospheric monitoring mission—understanding conditions near active fires could improve disaster response and climate science.",
+    "notes": "I chose satellite data because it showcases how WindBorne's atmospheric monitoring complements orbital infrastructure—demonstrating integrated Earth systems observation.",
     "submission_url": "https://your-vercel-app.vercel.app",
     "portfolio_url": "https://www.bretteastman.dev/",
     "resume_url": "https://drive.google.com/file/d/1VOvlsPzH0N5xhieyJWyBuF5qD2-O2ip9/view?usp=drive_link"
@@ -234,7 +233,7 @@ curl -X POST https://windbornesystems.com/career_applications.json \
 
 1. **Robust validation** - They specifically mentioned corruption, show you handled it
 2. **Visual polish** - Make it look professional and clean
-3. **Clear reasoning** - Explain why wildfires matter for their mission
+3. **Clear reasoning** - Explain why satellites matter for their mission
 4. **Working live updates** - Demonstrate it's truly dynamic
 5. **Follow instructions exactly** - They're testing attention to detail
 

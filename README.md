@@ -39,15 +39,15 @@ By visualizing both datasets together, this app demonstrates how WindBorne's net
   - Each contains ~1000 balloon positions [lat, lon, altitude]
   - Robust validation filters corrupted entries
 
-- **Wildfire Data**: [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/)
-  - MODIS Near Real-Time (NRT) active fire detections
-  - Last 24 hours of global wildfire activity
+- **Satellite Data**: [Open-Notify API](http://api.open-notify.org/) (ISS) & Starlink Constellation Data
+  - International Space Station (ISS) real-time position
+  - Starlink constellation positions (generated based on orbital mechanics)
   - Includes brightness, confidence, and timestamp data
 
 ## Features
 
 - **Robust Data Validation**: Filters invalid balloon data points based on strict validation rules
-- **Live Updates**: Polls every 5 minutes for balloons, 10 minutes for wildfires
+- **Live Updates**: Polls every 5 minutes for balloons, 10 minutes for satellites
 - **Performance Optimized**: Uses ~294 requests/hour (well under 1000 limit)
 - **Responsive Design**: Works on desktop and mobile devices
 - **Real-time Statistics**: Shows active data counts and error tracking
@@ -97,7 +97,7 @@ src/
 ├── lib/
 │ ├── stores/
 │ │ ├── balloonData.ts # Balloon fetching + polling
-│ │ └── wildfireData.ts # Wildfire fetching + polling
+│ │ └── satelliteData.ts # Satellite fetching + polling
 │ ├── components/
 │ │ ├── Map.svelte # Leaflet map with markers
 │ │ └── Legend.svelte # Map legend and explanation
@@ -125,7 +125,7 @@ Invalid entries are filtered out and counted to demonstrate robust error handlin
 **Request Budget (per hour):**
 
 - Balloon endpoints: 24 files × 12 requests/hour = 288 requests
-- Wildfire endpoint: 1 file × 6 requests/hour = 6 requests
+- Satellite endpoint: 1 file × 6 requests/hour = 6 requests
 - **Total: 294 requests/hour** ✅ (well under 1000 limit)
 
 ## Deployment

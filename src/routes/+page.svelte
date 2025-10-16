@@ -3,21 +3,21 @@
   import Map from "$lib/components/Map.svelte";
   import Legend from "$lib/components/Legend.svelte";
   import { balloonData } from "$lib/stores/balloonData";
-  import { wildfireData } from "$lib/stores/wildfireData";
+  import { satelliteData } from "$lib/stores/satelliteData";
 
   let cleanupBalloons: (() => void) | null = null;
-  let cleanupWildfires: (() => void) | null = null;
+  let cleanupSatellites: (() => void) | null = null;
 
   onMount(() => {
     // Start polling for both data sources
     cleanupBalloons = balloonData.startPolling();
-    cleanupWildfires = wildfireData.startPolling();
+    cleanupSatellites = satelliteData.startPolling();
   });
 
   onDestroy(() => {
     // Clean up polling intervals
     cleanupBalloons?.();
-    cleanupWildfires?.();
+    cleanupSatellites?.();
   });
 
   // Calculate total balloon points
@@ -67,7 +67,7 @@
     <div class="stat-card">
       <div class="stat-label">Active Satellites</div>
       <div class="stat-value">
-        {$wildfireData.fires.length.toLocaleString()}
+        {$satelliteData.satellites.length.toLocaleString()}
       </div>
     </div>
     <div class="stat-card">
@@ -76,20 +76,20 @@
     </div>
   </div>
 
-  {#if $balloonData.status.loading || $wildfireData.status.loading}
+  {#if $balloonData.status.loading || $satelliteData.status.loading}
     <div class="loading-banner">Loading data...</div>
   {/if}
 
-  {#if $balloonData.status.error || $wildfireData.status.error}
+  {#if $balloonData.status.error || $satelliteData.status.error}
     <div class="error-banner">
-      {$balloonData.status.error || $wildfireData.status.error}
+      {$balloonData.status.error || $satelliteData.status.error}
     </div>
   {/if}
 
   <div class="map-wrapper">
     <Map
       balloonDatasets={$balloonData.datasets}
-      wildfires={$wildfireData.fires}
+      satellites={$satelliteData.satellites}
     />
     <Legend />
   </div>
@@ -116,7 +116,7 @@
       </div>
       <div class="update-info">
         Last updated: Balloons {formatTime($balloonData.status.lastUpdated)} • Satellites
-        {formatTime($wildfireData.status.lastUpdated)}
+        {formatTime($satelliteData.status.lastUpdated)}
         <br />
         Updates every 5 min (balloons) / 10 min (satellites)
       </div>
