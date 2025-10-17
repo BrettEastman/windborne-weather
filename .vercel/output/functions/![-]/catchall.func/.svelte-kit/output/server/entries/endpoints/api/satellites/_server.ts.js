@@ -23,26 +23,48 @@ async function GET() {
   try {
     console.log("Fetching satellite data (ISS + Starlink constellation)...");
     let issData = null;
-    try {
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timeout after 10 seconds")), 1e4);
-      });
-      const issResponse = await Promise.race([
-        fetch(ISS_API, {
+    const maxRetries = 3;
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const issResponse = await fetch(ISS_API, {
           headers: {
-            "User-Agent": "Mozilla/5.0 (compatible; WindBorne-Weather-App/1.0)",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             "Accept": "application/json, text/plain, */*",
-            "Cache-Control": "no-cache"
-          }
-        }),
-        timeoutPromise
-      ]);
-      if (issResponse.ok) {
-        issData = await issResponse.json();
-        console.log("ISS position fetched:", issData.iss_position);
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate, br",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+            "Referer": "https://windbornesystems.com/",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "cross-site",
+            "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
+            "Sec-Ch-Ua-Mobile": "?0",
+            "Sec-Ch-Ua-Platform": '"Windows"'
+          },
+          signal: AbortSignal.timeout(8e3)
+        });
+        if (issResponse.ok) {
+          issData = await issResponse.json();
+          console.log("ISS position fetched:", issData.iss_position);
+          break;
+        } else if (issResponse.status === 429 && attempt < maxRetries) {
+          console.warn(`ISS API rate limited, attempt ${attempt}/${maxRetries}`);
+          await new Promise((resolve) => setTimeout(resolve, 2e3 * attempt));
+          continue;
+        } else if (issResponse.status >= 500 && attempt < maxRetries) {
+          console.warn(`ISS API server error (${issResponse.status}), attempt ${attempt}/${maxRetries}`);
+          await new Promise((resolve) => setTimeout(resolve, 1e3 * attempt));
+          continue;
+        }
+        console.warn(`ISS API returned ${issResponse.status}`);
+        break;
+      } catch (e) {
+        console.warn(`ISS API attempt ${attempt}/${maxRetries} failed:`, e);
+        if (attempt < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, 1e3 * attempt));
+        }
       }
-    } catch (e) {
-      console.warn("Could not fetch ISS position:", e);
     }
     const starlink = generateStarlinkConstellation();
     console.log(`Generated ${starlink.length} Starlink satellite positions`);
