@@ -421,11 +421,6 @@
     gap: 8px;
   }
 
-  .screen-dimensions {
-    font-size: 0.75em;
-    color: rgba(255, 255, 255, 0.8);
-  }
-
   .github-link a {
     display: inline-block;
     padding: 8px 16px;

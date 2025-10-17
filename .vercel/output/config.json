@@ -1,0 +1,31 @@
+{
+	"version": 3,
+	"routes": [
+		{
+			"src": "/_app/immutable/.+",
+			"headers": {
+				"cache-control": "public, immutable, max-age=31536000"
+			}
+		},
+		{
+			"handle": "filesystem"
+		},
+		{
+			"src": "^/api/balloons/?(?:/__data.json)?$",
+			"dest": "/api/balloons"
+		},
+		{
+			"src": "^/api/satellites/?(?:/__data.json)?$",
+			"dest": "/api/satellites"
+		},
+		{
+			"src": "/.*",
+			"dest": "/![-]/catchall"
+		}
+	],
+	"overrides": {
+		"index.html": {
+			"path": ""
+		}
+	}
+}
