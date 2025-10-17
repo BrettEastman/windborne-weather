@@ -6,6 +6,14 @@
   let cleanupBalloons: (() => void) | null = null;
   let cleanupSatellites: (() => void) | null = null;
 
+  // Tooltip state
+  let tooltip: { visible: boolean; x: number; y: number; content: string } = {
+    visible: false,
+    x: 0,
+    y: 0,
+    content: "",
+  };
+
   onMount(() => {
     cleanupBalloons = balloonData.startPolling();
     cleanupSatellites = satelliteData.startPolling();
@@ -42,6 +50,57 @@
     const normalized = logAlt / maxLog;
     return 1 + normalized * 7; // Maps to 1-8px radius
   }
+
+  // Handle hover for balloons
+  function handleBalloonHover(
+    e: MouseEvent,
+    lat: number,
+    lon: number,
+    alt: number,
+    hour: number
+  ) {
+    const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
+    tooltip = {
+      visible: true,
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10,
+      content: `Lat: ${lat.toFixed(2)}° | Lon: ${lon.toFixed(2)}° | Alt: ${(alt / 1000).toFixed(1)}km | Age: ${hour}h`,
+    };
+  }
+
+  // Handle hover for satellites
+  function handleSatelliteHover(
+    e: MouseEvent,
+    lat: number,
+    lon: number,
+    brightness: number
+  ) {
+    const rect = (e.currentTarget as SVGCircleElement).getBoundingClientRect();
+    tooltip = {
+      visible: true,
+      x: rect.left + rect.width / 2,
+      y: rect.top - 10,
+      content: `Lat: ${lat.toFixed(2)}° | Lon: ${lon.toFixed(2)}° | Brightness: ${brightness}`,
+    };
+  }
+
+  // Hide tooltip
+  function hideTooltip() {
+    tooltip.visible = false;
+  }
+
+  // Generate SVG path for a star shape
+  function generateStarPath(cx: number, cy: number, r: number): string {
+    const points = [];
+    for (let i = 0; i < 10; i++) {
+      const angle = (i * Math.PI) / 5;
+      const radius = i % 2 === 0 ? r : r * 0.4;
+      const x = cx + Math.cos(angle - Math.PI / 2) * radius;
+      const y = cy + Math.sin(angle - Math.PI / 2) * radius;
+      points.push(`${x},${y}`);
+    }
+    return `M${points.join(" L")} Z`;
+  }
 </script>
 
 <svelte:head>
@@ -52,18 +111,7 @@
   />
 </svelte:head>
 
-<div class="container">
-  <h1>WindBorne Weather Balloon & Satellite Live Imagery</h1>
-  <div class="stats">
-    <div>
-      Balloons: {$balloonData.datasets.reduce(
-        (sum, ds) => sum + ds.points.length,
-        0
-      )}
-    </div>
-    <div>Satellites: {$satelliteData.satellites.length}</div>
-  </div>
-
+<div class="fullscreen-container">
   <div class="map-wrapper">
     <svg class="map" viewBox="0 0 1000 600">
       <!-- Background -->
@@ -91,6 +139,12 @@
               r={getRadiusFromAltitude(alt)}
               fill="#3b82f6"
               opacity={1 - dataset.hour / 24}
+              class="data-point balloon-point"
+              role="button"
+              tabindex="0"
+              on:mouseenter={(e) =>
+                handleBalloonHover(e, lat, lon, alt, dataset.hour)}
+              on:mouseleave={hideTooltip}
             />
           </g>
         {/each}
@@ -101,6 +155,7 @@
         {@const { x, y } = projectPoint(sat.latitude, sat.longitude, 1000, 600)}
         {@const size = sat.brightness > 350 ? 8 : 4}
         {@const delay = getAnimationDelay(x, y)}
+        {@const isISS = sat.satellite === "ISS"}
         <g>
           <animateTransform
             attributeName="transform"
@@ -112,46 +167,76 @@
             calcMode="spline"
             keySplines="0.42,0 0.58,1; 0.42,0 0.58,1; 0.42,0 0.58,1; 0.42,0 0.58,1"
           />
-          <circle cx={x} cy={y} r={size} fill="#dc2626" opacity="0.9" />
+          {#if isISS}
+            <!-- ISS rendered as a golden star -->
+            <path
+              d={generateStarPath(x, y, 8)}
+              fill="#FFD700"
+              opacity="1"
+              class="data-point satellite-point iss-point"
+              role="button"
+              tabindex="0"
+              on:mouseenter={(e) =>
+                handleSatelliteHover(
+                  e,
+                  sat.latitude,
+                  sat.longitude,
+                  sat.brightness
+                )}
+              on:mouseleave={hideTooltip}
+            />
+          {:else}
+            <!-- Other satellites as red circles -->
+            <circle
+              cx={x}
+              cy={y}
+              r={size}
+              fill="#dc2626"
+              opacity="0.9"
+              class="data-point satellite-point"
+              role="button"
+              tabindex="0"
+              on:mouseenter={(e) =>
+                handleSatelliteHover(
+                  e,
+                  sat.latitude,
+                  sat.longitude,
+                  sat.brightness
+                )}
+              on:mouseleave={hideTooltip}
+            />
+          {/if}
         </g>
       {/each}
     </svg>
   </div>
 
-  <p class="info">
-    Blue dots = Balloons (fade with age) | Red dots = Satellites (larger = ISS,
-    smaller = Starlink)
-  </p>
+  <div class="overlay-content">
+    <h1>WindBorne Weather Balloon & Satellite Live Imagery</h1>
+    <div class="stats">
+      <div>
+        Balloons: {$balloonData.datasets.reduce(
+          (sum, ds) => sum + ds.points.length,
+          0
+        )}
+      </div>
+      <div>Satellites: {$satelliteData.satellites.length}</div>
+    </div>
+  </div>
 </div>
 
+{#if tooltip.visible}
+  <div class="tooltip" style="left: {tooltip.x}px; top: {tooltip.y}px">
+    {tooltip.content}
+  </div>
+{/if}
+
 <style>
-  .container {
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  h1 {
-    color: #1e3a8a;
-    margin-bottom: 20px;
-  }
-
-  .stats {
-    display: flex;
-    gap: 20px;
-    margin-bottom: 20px;
-    font-size: 16px;
-    font-weight: 600;
-  }
-
-  .map-wrapper {
+  .fullscreen-container {
     position: relative;
     width: 100%;
-    height: 700px; /* Adjust height as needed */
+    height: 100vh; /* Full viewport height */
     overflow: hidden;
-    border: 2px solid #3b82f6;
-    border-radius: 8px;
-    margin-bottom: 20px;
     background: linear-gradient(-45deg, #e8f4f8, #87ceeb, #4a5fe1, #6b46c1);
     background-size: 400% 400%;
     animation: gradientShift 15s ease infinite;
@@ -169,17 +254,75 @@
     }
   }
 
-  .map {
-    width: 100%;
-    height: 100%;
+  .map-wrapper {
     position: absolute;
     top: 0;
     left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* Ensure map is behind overlays */
   }
 
-  .info {
-    text-align: center;
-    color: #666;
-    font-size: 14px;
+  .map {
+    width: 100%;
+    height: 100%;
+  }
+
+  .overlay-content {
+    position: absolute;
+    top: 20px; /* Adjust as needed */
+    left: 20px; /* Adjust as needed */
+    z-index: 2; /* Ensure overlays are above map */
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  h1 {
+    font-size: 3em;
+    margin-bottom: 10px;
+  }
+
+  .stats {
+    font-size: 1.5em;
+    font-weight: 600;
+  }
+
+  /* Hover effects for data points */
+  .data-point {
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .data-point:hover {
+    filter: brightness(1.4);
+  }
+
+  .balloon-point:hover {
+    r: 5;
+  }
+
+  .satellite-point:hover {
+    r: 8;
+  }
+
+  /* ISS star specific hover effect */
+  .iss-point:hover {
+    filter: brightness(1.4) drop-shadow(0 0 6px #ffd700);
+  }
+
+  /* Tooltip styling */
+  .tooltip {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 1000;
+    transform: translate(-50%, -100%);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    font-family: monospace;
   }
 </style>

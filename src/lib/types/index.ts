@@ -14,6 +14,7 @@ export interface SatellitePoint {
   confidence: number;
   acq_date: string;
   acq_time: string;
+  satellite?: string; // "ISS", "Starlink", etc.
 }
 
 export interface FetchStatus {

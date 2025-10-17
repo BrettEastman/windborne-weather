@@ -30,6 +30,7 @@ function createSatelliteStore() {
     const confIdx = headers.indexOf("confidence");
     const dateIdx = headers.indexOf("acq_date");
     const timeIdx = headers.indexOf("acq_time");
+    const satIdx = headers.indexOf("satellite");
 
     if (
       latIdx === -1 ||
@@ -67,6 +68,7 @@ function createSatelliteStore() {
         confidence,
         acq_date: values[dateIdx],
         acq_time: values[timeIdx],
+        satellite: satIdx !== -1 ? values[satIdx] : undefined,
       });
     }
 
