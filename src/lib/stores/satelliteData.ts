@@ -1,52 +1,6 @@
 import { writable } from "svelte/store";
 import type { SatellitePoint, SatelliteStore } from "$lib/types";
 
-const ISS_API = "http://api.open-notify.org/iss-now.json";
-
-/**
- * Generate Starlink constellation positions in realistic orbital patterns
- * Starlink orbits at ~550km altitude in polar/near-polar orbits
- * Creates beautiful grid-like patterns across the Earth
- */
-function generateStarlinkConstellation(): Array<{
-  lat: number;
-  lon: number;
-  magnitude: number;
-}> {
-  const satellites: Array<{ lat: number; lon: number; magnitude: number }> = [];
-
-  // Starlink has multiple orbital planes
-  // We'll create realistic-looking orbital patterns
-  const orbitalPlanes = 72; // Approximate number of planes
-  const satPerPlane = 22; // Satellites per plane (roughly)
-
-  for (let plane = 0; plane < orbitalPlanes; plane++) {
-    // Each plane is offset by this longitude
-    const planeOffset = (plane * 360) / orbitalPlanes;
-
-    for (let i = 0; i < satPerPlane; i++) {
-      // Latitude varies by orbital inclination (mostly 53 degrees)
-      // Create satellite spread along the orbital plane
-      const latBase = Math.sin((i / satPerPlane) * Math.PI) * 53 - 26.5;
-      // Add some variation for visual interest
-      const latVariation = Math.sin(plane * 0.5 + i * 0.3) * 15;
-      const lat = latBase + latVariation;
-
-      // Longitude based on plane offset and position in plane
-      const lonBase = planeOffset + (((i / satPerPlane) * 180) % 360);
-      const lonVariation = Math.cos(i * 0.7) * 20;
-      const lon = ((lonBase + lonVariation + 360) % 360) - 180;
-
-      // Magnitude variation for visual depth (0.1 to 4.5, typical for Starlink)
-      const magnitude = 3.0 + Math.sin(plane * 0.3 + i * 0.5) * 1.5;
-
-      satellites.push({ lat, lon, magnitude });
-    }
-  }
-
-  return satellites;
-}
-
 function createSatelliteStore() {
   const { subscribe, update } = writable<SatelliteStore>({
     satellites: [],
@@ -122,7 +76,7 @@ function createSatelliteStore() {
   }
 
   /**
-   * Fetch satellite data from external APIs (ISS + Starlink)
+   * Fetch satellite data from API
    */
   async function fetchSatellites(): Promise<void> {
     update((store) => ({
@@ -131,72 +85,14 @@ function createSatelliteStore() {
     }));
 
     try {
-      console.log("Fetching satellite data (ISS + Starlink constellation)...");
+      const response = await fetch("/api/satellites");
 
-      // Fetch ISS location (real-time)
-      let issData = null;
-      try {
-        const issResponse = await fetch(ISS_API);
-        if (issResponse.ok) {
-          issData = await issResponse.json();
-          console.log("ISS position fetched:", issData.iss_position);
-        }
-      } catch (e) {
-        console.warn("Could not fetch ISS position:", e);
+      if (!response.ok) {
+        throw new Error(`Satellite API returned ${response.status}`);
       }
 
-      // Generate Starlink constellation positions
-      const starlink = generateStarlinkConstellation();
-      console.log(`Generated ${starlink.length} Starlink satellite positions`);
-
-      // Convert to CSV format for compatibility with existing marker system
-      let csvContent =
-        "latitude,longitude,brightness,scan,track,acq_date,acq_time,satellite,instrument,confidence,version,bright_t31,frp,daynight\n";
-
-      // Add ISS (most prominent, larger marker)
-      if (issData?.iss_position) {
-        const issLat = parseFloat(issData.iss_position.latitude);
-        const issLon = parseFloat(issData.iss_position.longitude);
-        const now = new Date();
-        const acqDate = now.toISOString().split("T")[0];
-        const acqTime = now
-          .toISOString()
-          .split("T")[1]
-          .substring(0, 5)
-          .replace(":", "");
-
-        // ISS is very bright - make it stand out
-        csvContent += `${issLat},${issLon},380,0,0,${acqDate},${acqTime},ISS,Orbital,95,1,0,0,D\n`;
-        console.log(`Added ISS at (${issLat}, ${issLon})`);
-      }
-
-      // Add Starlink constellation
-      const now = new Date();
-      const acqDate = now.toISOString().split("T")[0];
-      const acqTime = now
-        .toISOString()
-        .split("T")[1]
-        .substring(0, 5)
-        .replace(":", "");
-
-      starlink.forEach((sat) => {
-        // Map magnitude to brightness (1-5 magnitude range becomes 100-250 brightness)
-        const brightness = Math.min(Math.max(sat.magnitude * 40, 100), 300);
-        // Confidence based on magnitude (brighter = more visible = higher confidence)
-        const confidence = Math.min(100, sat.magnitude * 15);
-
-        csvContent += `${sat.lat.toFixed(4)},${sat.lon.toFixed(
-          4
-        )},${brightness.toFixed(
-          0
-        )},0,0,${acqDate},${acqTime},Starlink,Orbital,${confidence.toFixed(
-          0
-        )},1,0,0,D\n`;
-      });
-
-      const satellites = parseCSV(csvContent);
-      const totalSats = (issData ? 1 : 0) + starlink.length;
-      console.log(`Returning ${totalSats} satellite positions`);
+      const csvText = await response.text();
+      const satellites = parseCSV(csvText);
 
       update(() => ({
         satellites,
