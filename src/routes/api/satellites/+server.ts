@@ -4,6 +4,21 @@ import { json } from "@sveltejs/kit";
 // ISS: Real-time International Space Station position
 const ISS_API = "http://api.open-notify.org/iss-now.json";
 
+// Add timeout wrapper for fetch
+async function fetchWithTimeout(url: string, timeoutMs: number = 5000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
+}
+
 /**
  * Generate Starlink constellation positions in realistic orbital patterns
  * Starlink orbits at ~550km altitude in polar/near-polar orbits
@@ -50,23 +65,39 @@ function generateStarlinkConstellation(): Array<{
 
 export async function GET() {
   try {
-    console.log("Fetching satellite data (ISS + Starlink constellation)...");
+    console.log(
+      "[Satellites] Fetching satellite data (ISS + Starlink constellation)..."
+    );
 
     // Fetch ISS location (real-time)
     let issData = null;
     try {
-      const issResponse = await fetch(ISS_API);
+      console.log(
+        "[Satellites] Attempting to fetch ISS position from",
+        ISS_API
+      );
+      const issResponse = await fetchWithTimeout(ISS_API, 5000);
       if (issResponse.ok) {
         issData = await issResponse.json();
-        console.log("ISS position fetched:", issData.iss_position);
+        console.log("[Satellites] ISS position fetched:", issData.iss_position);
+      } else {
+        console.warn(
+          "[Satellites] ISS API returned status:",
+          issResponse.status
+        );
       }
     } catch (e) {
-      console.warn("Could not fetch ISS position:", e);
+      console.warn(
+        "[Satellites] Could not fetch ISS position:",
+        e instanceof Error ? e.message : String(e)
+      );
     }
 
     // Generate Starlink constellation positions
     const starlink = generateStarlinkConstellation();
-    console.log(`Generated ${starlink.length} Starlink satellite positions`);
+    console.log(
+      `[Satellites] Generated ${starlink.length} Starlink satellite positions`
+    );
 
     // Convert to CSV format for compatibility with existing marker system
     let csvContent =
@@ -86,7 +117,7 @@ export async function GET() {
 
       // ISS is very bright - make it stand out
       csvContent += `${issLat},${issLon},380,0,0,${acqDate},${acqTime},ISS,Orbital,95,1,0,0,D\n`;
-      console.log(`Added ISS at (${issLat}, ${issLon})`);
+      console.log(`[Satellites] Added ISS at (${issLat}, ${issLon})`);
     }
 
     // Add Starlink constellation
@@ -114,7 +145,7 @@ export async function GET() {
     });
 
     const totalSats = (issData ? 1 : 0) + starlink.length;
-    console.log(`Returning ${totalSats} satellite positions`);
+    console.log(`[Satellites] Returning ${totalSats} satellite positions`);
 
     return new Response(csvContent, {
       headers: {
@@ -123,7 +154,7 @@ export async function GET() {
     });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    console.error("Error fetching satellite data:", errorMsg);
+    console.error("[Satellites] Error in GET handler:", errorMsg);
 
     // Return empty CSV header on error
     return new Response(
