@@ -29,12 +29,12 @@ async function GET() {
         const issResponse = await fetch(ISS_API, {
           headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            "Accept": "application/json, text/plain, */*",
+            Accept: "application/json, text/plain, */*",
             "Accept-Language": "en-US,en;q=0.9",
             "Accept-Encoding": "gzip, deflate, br",
             "Cache-Control": "no-cache",
-            "Pragma": "no-cache",
-            "Referer": "https://windbornesystems.com/",
+            Pragma: "no-cache",
+            Referer: "https://windbornesystems.com/",
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "cross-site",
@@ -49,11 +49,15 @@ async function GET() {
           console.log("ISS position fetched:", issData.iss_position);
           break;
         } else if (issResponse.status === 429 && attempt < maxRetries) {
-          console.warn(`ISS API rate limited, attempt ${attempt}/${maxRetries}`);
+          console.warn(
+            `ISS API rate limited, attempt ${attempt}/${maxRetries}`
+          );
           await new Promise((resolve) => setTimeout(resolve, 2e3 * attempt));
           continue;
         } else if (issResponse.status >= 500 && attempt < maxRetries) {
-          console.warn(`ISS API server error (${issResponse.status}), attempt ${attempt}/${maxRetries}`);
+          console.warn(
+            `ISS API server error (${issResponse.status}), attempt ${attempt}/${maxRetries}`
+          );
           await new Promise((resolve) => setTimeout(resolve, 1e3 * attempt));
           continue;
         }

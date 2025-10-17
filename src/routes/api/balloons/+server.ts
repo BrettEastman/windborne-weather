@@ -14,7 +14,7 @@ export async function GET({ url }) {
 
   try {
     // Add a small delay to avoid rate limiting (different delay per hour to spread requests)
-    const delay = parseInt(hourStr) * 100; // 0-2300ms delay based on hour
+    const delay = parseInt(hourStr) * 50; // 0-1150ms delay based on hour (reduced)
     await new Promise((resolve) => setTimeout(resolve, delay));
 
     // Retry logic for failed requests
@@ -26,8 +26,8 @@ export async function GET({ url }) {
         // Create a timeout promise
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(
-            () => reject(new Error("Request timeout after 10 seconds")),
-            10000
+            () => reject(new Error("Request timeout after 15 seconds")),
+            15000
           );
         });
 

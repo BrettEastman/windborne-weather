@@ -24,12 +24,12 @@ async function GET({ url }) {
           fetch(fetchUrl, {
             headers: {
               "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-              "Accept": "application/json, text/plain, */*",
+              Accept: "application/json, text/plain, */*",
               "Accept-Language": "en-US,en;q=0.9",
               "Accept-Encoding": "gzip, deflate, br",
               "Cache-Control": "no-cache",
-              "Pragma": "no-cache",
-              "Referer": "https://windbornesystems.com/",
+              Pragma: "no-cache",
+              Referer: "https://windbornesystems.com/",
               "Sec-Fetch-Dest": "empty",
               "Sec-Fetch-Mode": "cors",
               "Sec-Fetch-Site": "cross-site",
@@ -44,13 +44,17 @@ async function GET({ url }) {
           const data = await response.json();
           return json(data);
         } else if (response.status === 429) {
-          console.warn(`Rate limited for hour ${hourStr}, attempt ${attempt}/${maxRetries}`);
+          console.warn(
+            `Rate limited for hour ${hourStr}, attempt ${attempt}/${maxRetries}`
+          );
           if (attempt < maxRetries) {
             await new Promise((resolve) => setTimeout(resolve, 2e3 * attempt));
             continue;
           }
         } else if (response.status >= 500) {
-          console.warn(`Server error for hour ${hourStr} (${response.status}), attempt ${attempt}/${maxRetries}`);
+          console.warn(
+            `Server error for hour ${hourStr} (${response.status}), attempt ${attempt}/${maxRetries}`
+          );
           if (attempt < maxRetries) {
             await new Promise((resolve) => setTimeout(resolve, 1e3 * attempt));
             continue;
@@ -65,7 +69,10 @@ async function GET({ url }) {
         );
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        console.warn(`Attempt ${attempt}/${maxRetries} failed for hour ${hourStr}:`, lastError.message);
+        console.warn(
+          `Attempt ${attempt}/${maxRetries} failed for hour ${hourStr}:`,
+          lastError.message
+        );
         if (attempt < maxRetries) {
           await new Promise((resolve) => setTimeout(resolve, 1e3 * attempt));
         }
