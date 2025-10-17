@@ -254,7 +254,7 @@
         </div>
         <div>
           ISS: <a
-            href="https://api.open-notify.org/"
+            href="http://open-notify.org/Open-Notify-API/ISS-Location-Now/"
             target="_blank"
             rel="noopener noreferrer">Open-Notify API</a
           >

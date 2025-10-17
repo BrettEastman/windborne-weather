@@ -28,7 +28,7 @@ This application visualizes two critical datasets:
   - Each contains ~1000 balloon positions [lat, lon, altitude]
   - Robust validation filters corrupted entries
 
-- **Satellite Data** - ISS and Starlink represent humanity's space-based monitoring and communication network: [Open-Notify API](http://api.open-notify.org/) (ISS) & Starlink Constellation Data
+- **Satellite Data** - ISS and Starlink represent humanity's space-based monitoring and communication network: [Open-Notify API](http://open-notify.org/Open-Notify-API/ISS-Location-Now/) (ISS) & Starlink Constellation Data
   - International Space Station (ISS) real-time position (represented as a star shape)
   - Starlink constellation positions (generated based on orbital mechanics)
   - Includes brightness and timestamp data
