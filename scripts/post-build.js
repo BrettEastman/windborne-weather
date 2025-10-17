@@ -52,12 +52,23 @@ console.log(`Found ${functionDirs.length} function directories`);
 
 for (const funcDir of functionDirs) {
   const packageJsonPath = path.join(funcDir, "package.json");
+  const packageLockPath = path.join(funcDir, "package-lock.json");
+
   console.log(`Writing package.json to ${packageJsonPath}`);
   console.log(`Content: ${JSON.stringify(prodPackageJson, null, 2)}`);
   try {
     fs.writeFileSync(packageJsonPath, JSON.stringify(prodPackageJson, null, 2));
     console.log(`Successfully wrote ${packageJsonPath}`);
-    // Verify it was written
+
+    // Copy package-lock.json from root if it exists
+    const rootPackageLock = path.join(rootDir, "package-lock.json");
+    if (fs.existsSync(rootPackageLock)) {
+      console.log(`Copying package-lock.json to ${packageLockPath}`);
+      fs.copyFileSync(rootPackageLock, packageLockPath);
+      console.log(`Successfully copied package-lock.json`);
+    }
+
+    // Verify package.json was written
     const content = fs.readFileSync(packageJsonPath, "utf-8");
     console.log(`Verified content: ${content}`);
 
