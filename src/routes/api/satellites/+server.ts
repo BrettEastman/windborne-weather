@@ -2,7 +2,7 @@ import { json } from "@sveltejs/kit";
 
 // Satellite tracking APIs - both free, no authentication needed
 // ISS: Real-time International Space Station position
-const ISS_API = "http://api.open-notify.org/iss-now.json";
+const ISS_API = "https://api.open-notify.org/iss-now.json";
 
 /**
  * Generate Starlink constellation positions in realistic orbital patterns
@@ -55,7 +55,25 @@ export async function GET() {
     // Fetch ISS location (real-time)
     let issData = null;
     try {
-      const issResponse = await fetch(ISS_API);
+      // Create a timeout promise
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(
+          () => reject(new Error("Request timeout after 10 seconds")),
+          10000
+        );
+      });
+
+      // Race between fetch and timeout
+      const issResponse = (await Promise.race([
+        fetch(ISS_API, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; WindBorne-Weather-App/1.0)",
+            Accept: "application/json, text/plain, */*",
+            "Cache-Control": "no-cache",
+          },
+        }),
+        timeoutPromise,
+      ])) as Response;
       if (issResponse.ok) {
         issData = await issResponse.json();
         console.log("ISS position fetched:", issData.iss_position);
@@ -125,6 +143,25 @@ export async function GET() {
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error("Error fetching satellite data:", errorMsg);
+
+    // Provide more specific error messages based on error type
+    let userMessage = "Failed to fetch satellite data";
+    if (errorMsg.includes("fetch")) {
+      if (errorMsg.includes("ECONNREFUSED")) {
+        userMessage =
+          "Connection refused - external satellite API may be down or blocking requests";
+      } else if (errorMsg.includes("ENOTFOUND")) {
+        userMessage =
+          "DNS resolution failed - check if satellite API domain is accessible";
+      } else if (errorMsg.includes("timeout")) {
+        userMessage =
+          "Request timed out - satellite API may be slow or unresponsive";
+      } else {
+        userMessage = "Network error - unable to reach satellite API";
+      }
+    }
+
+    console.error(`Satellite API error: ${userMessage}`);
 
     // Return empty CSV header on error
     return new Response(

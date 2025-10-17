@@ -1,5 +1,5 @@
 import "@sveltejs/kit";
-const ISS_API = "http://api.open-notify.org/iss-now.json";
+const ISS_API = "https://api.open-notify.org/iss-now.json";
 function generateStarlinkConstellation() {
   const satellites = [];
   const orbitalPlanes = 72;
@@ -24,7 +24,19 @@ async function GET() {
     console.log("Fetching satellite data (ISS + Starlink constellation)...");
     let issData = null;
     try {
-      const issResponse = await fetch(ISS_API);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Request timeout after 10 seconds")), 1e4);
+      });
+      const issResponse = await Promise.race([
+        fetch(ISS_API, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (compatible; WindBorne-Weather-App/1.0)",
+            "Accept": "application/json, text/plain, */*",
+            "Cache-Control": "no-cache"
+          }
+        }),
+        timeoutPromise
+      ]);
       if (issResponse.ok) {
         issData = await issResponse.json();
         console.log("ISS position fetched:", issData.iss_position);
@@ -70,6 +82,19 @@ async function GET() {
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error("Error fetching satellite data:", errorMsg);
+    let userMessage = "Failed to fetch satellite data";
+    if (errorMsg.includes("fetch")) {
+      if (errorMsg.includes("ECONNREFUSED")) {
+        userMessage = "Connection refused - external satellite API may be down or blocking requests";
+      } else if (errorMsg.includes("ENOTFOUND")) {
+        userMessage = "DNS resolution failed - check if satellite API domain is accessible";
+      } else if (errorMsg.includes("timeout")) {
+        userMessage = "Request timed out - satellite API may be slow or unresponsive";
+      } else {
+        userMessage = "Network error - unable to reach satellite API";
+      }
+    }
+    console.error(`Satellite API error: ${userMessage}`);
     return new Response(
       "latitude,longitude,brightness,scan,track,acq_date,acq_time,satellite,instrument,confidence,version,bright_t31,frp,daynight\n",
       {
