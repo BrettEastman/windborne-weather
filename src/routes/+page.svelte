@@ -27,18 +27,33 @@
     const y = ((90 - lat) / 180) * height;
     return { x, y };
   }
+
+  // Generate deterministic animation delay based on position (0-2 seconds)
+  function getAnimationDelay(x: number, y: number): number {
+    const seed = Math.sin(x * 0.01) * Math.cos(y * 0.01);
+    return ((seed + 1) / 2) * 2; // Maps to 0-2 seconds
+  }
+
+  // Calculate radius based on altitude (0-50000m range) using logarithmic scaling
+  function getRadiusFromAltitude(altitude: number): number {
+    // Add 1 to avoid log(0), then use log scale for better visibility of variations
+    const logAlt = Math.log(altitude + 1);
+    const maxLog = Math.log(50001);
+    const normalized = logAlt / maxLog;
+    return 1 + normalized * 7; // Maps to 1-8px radius
+  }
 </script>
 
 <svelte:head>
-  <title>WindBorne Weather Balloon & Satellite Tracker</title>
+  <title>WindBorne Weather Balloon & Satellite Live Imagery</title>
   <meta
     name="description"
-    content="Real-time visualization of WindBorne's weather balloon constellation and orbital satellite network"
+    content="Real-time artistic visualization of WindBorne's weather balloon constellation and orbital satellite network"
   />
 </svelte:head>
 
 <div class="container">
-  <h1>WindBorne Atmospheric & Orbital Tracker</h1>
+  <h1>WindBorne Weather Balloon & Satellite Live Imagery</h1>
   <div class="stats">
     <div>
       Balloons: {$balloonData.datasets.reduce(
@@ -49,35 +64,59 @@
     <div>Satellites: {$satelliteData.satellites.length}</div>
   </div>
 
-  <svg class="map" viewBox="0 0 1000 600">
-    <!-- Background -->
-    <rect width="1000" height="600" fill="#e8f4f8" />
+  <div class="map-wrapper">
+    <svg class="map" viewBox="0 0 1000 600">
+      <!-- Background -->
+      <rect width="1000" height="600" fill="none" />
 
-    <!-- Balloons (blue dots) -->
-    {#each $balloonData.datasets as dataset}
-      {#each dataset.points as [lat, lon, alt]}
-        {@const { x, y } = projectPoint(lat, lon, 1000, 600)}
+      <!-- Balloons (blue dots) -->
+      {#each $balloonData.datasets as dataset}
+        {#each dataset.points as [lat, lon, alt]}
+          {@const { x, y } = projectPoint(lat, lon, 1000, 600)}
+          {@const delay = getAnimationDelay(x, y)}
+          <g>
+            <animateTransform
+              attributeName="transform"
+              type="translate"
+              values="0,0; 1,0.75; -0.75,1; 0.75,-1; 0,0"
+              dur="12s"
+              begin="{delay}s"
+              repeatCount="indefinite"
+              calcMode="spline"
+              keySplines="0.42,0 0.58,1; 0.42,0 0.58,1; 0.42,0 0.58,1; 0.42,0 0.58,1"
+            />
+            <circle
+              cx={x}
+              cy={y}
+              r={getRadiusFromAltitude(alt)}
+              fill="#3b82f6"
+              opacity={1 - dataset.hour / 24}
+            />
+          </g>
+        {/each}
+      {/each}
+
+      <!-- Satellites (red dots) -->
+      {#each $satelliteData.satellites as sat}
+        {@const { x, y } = projectPoint(sat.latitude, sat.longitude, 1000, 600)}
+        {@const size = sat.brightness > 350 ? 8 : 4}
+        {@const delay = getAnimationDelay(x, y)}
         <g>
-          <circle
-            cx={x}
-            cy={y}
-            r="2"
-            fill="#3b82f6"
-            opacity={1 - dataset.hour / 24}
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            values="0,0; 1,0.75; -0.75,1; 0.75,-1; 0,0"
+            dur="12s"
+            begin="{delay}s"
+            repeatCount="indefinite"
+            calcMode="spline"
+            keySplines="0.42,0 0.58,1; 0.42,0 0.58,1; 0.42,0 0.58,1; 0.42,0 0.58,1"
           />
+          <circle cx={x} cy={y} r={size} fill="#dc2626" opacity="0.9" />
         </g>
       {/each}
-    {/each}
-
-    <!-- Satellites (red dots) -->
-    {#each $satelliteData.satellites as sat}
-      {@const { x, y } = projectPoint(sat.latitude, sat.longitude, 1000, 600)}
-      {@const size = sat.brightness > 350 ? 8 : 4}
-      <g>
-        <circle cx={x} cy={y} r={size} fill="#dc2626" opacity="0.9" />
-      </g>
-    {/each}
-  </svg>
+    </svg>
+  </div>
 
   <p class="info">
     Blue dots = Balloons (fade with age) | Red dots = Satellites (larger = ISS,
@@ -105,12 +144,37 @@
     font-weight: 600;
   }
 
-  .map {
+  .map-wrapper {
+    position: relative;
     width: 100%;
+    height: 700px; /* Adjust height as needed */
+    overflow: hidden;
     border: 2px solid #3b82f6;
-    background: white;
     border-radius: 8px;
     margin-bottom: 20px;
+    background: linear-gradient(-45deg, #e8f4f8, #87ceeb, #4a5fe1, #6b46c1);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
+  }
+
+  @keyframes gradientShift {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
+
+  .map {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
   }
 
   .info {

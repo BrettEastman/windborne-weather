@@ -113,10 +113,10 @@ function createBalloonStore() {
     // Initial fetch
     fetchAll();
 
-    // Poll every minute
+    // Poll every 2 minutes
     pollingInterval = window.setInterval(() => {
       fetchAll();
-    }, 1 * 60 * 1000);
+    }, 2 * 60 * 1000);
 
     // Return cleanup function
     return () => {

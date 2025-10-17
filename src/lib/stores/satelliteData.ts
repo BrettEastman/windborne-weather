@@ -126,10 +126,10 @@ function createSatelliteStore() {
     // Initial fetch
     fetchSatellites();
 
-    // Poll every 10 minutes (600000ms)
+    // Poll every 3 minutes
     pollingInterval = window.setInterval(() => {
       fetchSatellites();
-    }, 10 * 60 * 1000);
+    }, 3 * 60 * 1000);
 
     // Return cleanup function
     return () => {
