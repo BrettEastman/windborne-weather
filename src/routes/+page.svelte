@@ -6,6 +6,10 @@
   let cleanupBalloons: (() => void) | null = null;
   let cleanupSatellites: (() => void) | null = null;
 
+  // Window dimensions
+  let windowWidth = 0;
+  let windowHeight = 0;
+
   // Tooltip state
   let tooltip: { visible: boolean; x: number; y: number; content: string } = {
     visible: false,
@@ -15,10 +19,23 @@
   };
 
   onMount(() => {
+    // Set initial dimensions
+    windowWidth = window.innerWidth;
+    windowHeight = window.innerHeight;
+
+    // Handle resize
+    const handleResize = () => {
+      windowWidth = window.innerWidth;
+      windowHeight = window.innerHeight;
+    };
+
+    window.addEventListener("resize", handleResize);
+
     cleanupBalloons = balloonData.startPolling();
     cleanupSatellites = satelliteData.startPolling();
 
     return () => {
+      window.removeEventListener("resize", handleResize);
       cleanupBalloons?.();
       cleanupSatellites?.();
     };
@@ -113,7 +130,7 @@
 
 <div class="fullscreen-container">
   <div class="map-wrapper">
-    <svg class="map" viewBox="0 0 1000 600">
+    <svg class="map" viewBox="0 0 1000 600" preserveAspectRatio="none">
       <!-- Background -->
       <rect width="1000" height="600" fill="none" />
 
@@ -126,7 +143,7 @@
             <animateTransform
               attributeName="transform"
               type="translate"
-              values="0,0; 1,0.75; -0.75,1; 0.75,-1; 0,0"
+              values="0,0; 1.25,0.9375; -0.9375,1.25; 0.9375,-1.25; 0,0"
               dur="12s"
               begin="{delay}s"
               repeatCount="indefinite"
@@ -223,6 +240,38 @@
       <div>Satellites: {$satelliteData.satellites.length}</div>
     </div>
   </div>
+
+  <div class="footer">
+    <div class="footer-left">
+      <div class="credits">
+        <div><strong>Data Sources:</strong></div>
+        <div>
+          Weather Balloons: <a
+            href="https://windbornesystems.com"
+            target="_blank"
+            rel="noopener noreferrer">WindBorne Systems</a
+          >
+        </div>
+        <div>
+          ISS: <a
+            href="https://api.open-notify.org/"
+            target="_blank"
+            rel="noopener noreferrer">Open-Notify API</a
+          >
+        </div>
+        <div>Starlink Constellation: Generated orbital patterns</div>
+      </div>
+    </div>
+    <div class="github-link">
+      <a
+        href="https://github.com/BrettEastman/windborne-weather"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span>GitHub</span>
+      </a>
+    </div>
+  </div>
 </div>
 
 {#if tooltip.visible}
@@ -240,6 +289,7 @@
     background: linear-gradient(-45deg, #e8f4f8, #87ceeb, #4a5fe1, #6b46c1);
     background-size: 400% 400%;
     animation: gradientShift 15s ease infinite;
+    box-sizing: border-box;
   }
 
   @keyframes gradientShift {
@@ -275,16 +325,17 @@
     z-index: 2; /* Ensure overlays are above map */
     color: white;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    max-width: 50%;
   }
 
   h1 {
-    font-size: 3em;
-    margin-bottom: 10px;
+    font-size: 1.5em;
+    margin-bottom: 3px;
   }
 
   .stats {
-    font-size: 1.5em;
-    font-weight: 600;
+    font-size: 0.75em;
+    font-weight: 400;
   }
 
   /* Hover effects for data points */
@@ -324,5 +375,71 @@
     transform: translate(-50%, -100%);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     font-family: monospace;
+  }
+
+  /* Footer styling */
+  .footer {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    color: white;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+    font-size: 0.75em;
+    gap: 12px;
+    max-width: 45%;
+  }
+
+  .credits {
+    flex: 1;
+    text-align: left;
+  }
+
+  .credits div {
+    margin: 4px 0;
+    line-height: 1.4;
+  }
+
+  .credits a {
+    color: #c1dbfb;
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .credits a:hover {
+    color: #e7ecf3;
+    text-decoration: underline;
+  }
+
+  .footer-left {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .screen-dimensions {
+    font-size: 0.75em;
+    color: rgba(255, 255, 255, 0.8);
+  }
+
+  .github-link a {
+    display: inline-block;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    color: white;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .github-link a:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.6);
+    color: #60a5fa;
   }
 </style>
