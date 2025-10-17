@@ -1,6 +1,6 @@
 # WindBorne Weather Balloon & Satellite Tracker
 
-A real-time visualization tool that displays WindBorne Systems' weather balloon constellation data alongside orbital satellite network data including the ISS and Starlink constellation.
+A real-time artistic display of WindBorne Systems' weather balloon constellation data alongside orbital satellite network data including the ISS and Starlink constellation.
 
 ## Live Demo
 
@@ -13,100 +13,32 @@ This application visualizes two critical datasets:
 1. **WindBorne Weather Balloons**: Live positions from WindBorne's 24-hour rolling constellation of atmospheric monitoring balloons
 2. **Orbital Satellites**: Real-time positions of the International Space Station (ISS) and Starlink constellation from Open-Notify API
 
-## Why Satellites?
-
-This combination tells an important story about monitoring Earth's systems. Weather balloons provide crucial atmospheric data, while orbital satellites provide connectivity and positioning infrastructure. Together they represent:
-
-- **Atmospheric Monitoring**: WindBorne's balloon constellation measures atmospheric conditions globally
-- **Orbital Infrastructure**: ISS and Starlink represent humanity's space-based monitoring and communication network
-- **Integrated Earth Systems**: Combining atmospheric and orbital data creates a comprehensive picture of Earth observation capabilities
-
-By visualizing both datasets together, this app demonstrates how WindBorne's network complements global space infrastructure.
-
 ## Tech Stack
 
-- **SvelteKit** - Framework with adapter-static for deployment
-- **TypeScript** - Type-safe development
-- **Leaflet** - Interactive mapping (no Mapbox or other frameworks)
-- **Standard CSS** - Clean styling without frameworks
-- **Vite** - Build tooling
+- **SvelteKit**
+- **TypeScript**
+- **Standard CSS**
+- **Vite**
 
 ## Data Sources
 
-- **Balloon Data**: [WindBorne Systems Treasure Hunt API](https://a.windbornesystems.com/treasure/)
+- **Balloon Data** - WindBorne's balloon constellation measures atmospheric conditions globally: [WindBorne Systems Treasure Hunt API](https://a.windbornesystems.com/treasure/)
 
   - 24 hourly endpoints (00.json through 23.json)
   - Each contains ~1000 balloon positions [lat, lon, altitude]
   - Robust validation filters corrupted entries
 
-- **Satellite Data**: [Open-Notify API](http://api.open-notify.org/) (ISS) & Starlink Constellation Data
-  - International Space Station (ISS) real-time position
+- **Satellite Data** - ISS and Starlink represent humanity's space-based monitoring and communication network: [Open-Notify API](http://api.open-notify.org/) (ISS) & Starlink Constellation Data
+  - International Space Station (ISS) real-time position (represented as a star shape)
   - Starlink constellation positions (generated based on orbital mechanics)
-  - Includes brightness, confidence, and timestamp data
+  - Includes brightness and timestamp data
 
 ## Features
 
-- **Robust Data Validation**: Filters invalid balloon data points based on strict validation rules
-- **Live Updates**: Polls every 5 minutes for balloons, 10 minutes for satellites
-- **Performance Optimized**: Uses ~294 requests/hour (well under 1000 limit)
-- **Responsive Design**: Works on desktop and mobile devices
+- **Data Validation**: Filters invalid balloon data points based on strict validation rules
+- **Live Updates**: Polls every 2 minutes for balloons, 3 minutes for satellites
 - **Real-time Statistics**: Shows active data counts and error tracking
 - **Interactive Map**: Click markers for detailed information about each point
-
-## Local Development
-
-### Prerequisites
-
-- Node.js 18+ and npm
-
-### Installation
-
-\`\`\`bash
-
-# Install dependencies
-
-npm install
-
-# Start development server
-
-npm run dev
-
-# Open browser to http://localhost:5173
-
-\`\`\`
-
-### Build for Production
-
-\`\`\`bash
-
-# Build static site
-
-npm run build
-
-# Preview production build
-
-npm run preview
-\`\`\`
-
-## Project Structure
-
-\`\`\`
-src/
-├── routes/
-│ └── +page.svelte # Main page with map and stats
-├── lib/
-│ ├── stores/
-│ │ ├── balloonData.ts # Balloon fetching + polling
-│ │ └── satelliteData.ts # Satellite fetching + polling
-│ ├── components/
-│ │ ├── Map.svelte # Leaflet map with markers
-│ │ └── Legend.svelte # Map legend and explanation
-│ ├── utils/
-│ │ └── parseBalloons.ts # Data validation logic
-│ └── types/
-│ └── index.ts # TypeScript types
-└── app.css # Global styles
-\`\`\`
 
 ## Data Validation
 
@@ -119,14 +51,6 @@ The application implements strict validation for balloon data to handle potentia
 - Altitude: 0 to 50,000 meters
 
 Invalid entries are filtered out and counted to demonstrate robust error handling.
-
-## Performance
-
-**Request Budget (per hour):**
-
-- Balloon endpoints: 24 files × 12 requests/hour = 288 requests
-- Satellite endpoint: 1 file × 6 requests/hour = 6 requests
-- **Total: 294 requests/hour** ✅ (well under 1000 limit)
 
 ## Deployment
 
