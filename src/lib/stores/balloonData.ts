@@ -21,7 +21,7 @@ function createBalloonStore() {
    */
   async function fetchHour(hour: number): Promise<BalloonDataset | null> {
     const hourStr = hour.toString().padStart(2, "0");
-    const url = `/api/balloons?hour=${hour}`;
+    const url = `https://a.windbornesystems.com/treasure/${hourStr}.json`;
 
     try {
       const response = await fetch(url);
