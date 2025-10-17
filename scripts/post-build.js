@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import { execSync } from "child_process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.join(__dirname, "..");
@@ -59,6 +60,17 @@ for (const funcDir of functionDirs) {
     // Verify it was written
     const content = fs.readFileSync(packageJsonPath, "utf-8");
     console.log(`Verified content: ${content}`);
+
+    // Install dependencies in the function directory
+    console.log(`Installing dependencies in ${funcDir}`);
+    try {
+      execSync("npm install", { cwd: funcDir, stdio: "inherit" });
+      console.log(`Successfully installed dependencies in ${funcDir}`);
+    } catch (err) {
+      console.error(
+        `Error installing dependencies in ${funcDir}: ${err.message}`
+      );
+    }
   } catch (err) {
     console.error(`Error writing ${packageJsonPath}: ${err.message}`);
   }
