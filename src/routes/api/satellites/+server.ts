@@ -2,7 +2,7 @@ import { json } from "@sveltejs/kit";
 
 // Satellite tracking APIs - both free, no authentication needed
 // ISS: Real-time International Space Station position
-const ISS_API = "https://api.open-notify.org/iss-now.json";
+const ISS_API = "http://api.open-notify.org/iss-now.json";
 
 /**
  * Generate Starlink constellation positions in realistic orbital patterns
@@ -54,61 +54,14 @@ export async function GET() {
 
     // Fetch ISS location (real-time)
     let issData = null;
-
-    // Retry logic for ISS API
-    const maxRetries = 3;
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const issResponse = await fetch(ISS_API, {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            Accept: "application/json, text/plain, */*",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Accept-Encoding": "gzip, deflate, br",
-            "Cache-Control": "no-cache",
-            Pragma: "no-cache",
-            Referer: "https://windbornesystems.com/",
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "cross-site",
-            "Sec-Ch-Ua":
-              '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-            "Sec-Ch-Ua-Mobile": "?0",
-            "Sec-Ch-Ua-Platform": '"Windows"',
-          },
-          signal: AbortSignal.timeout(8000),
-        });
-
-        if (issResponse.ok) {
-          issData = await issResponse.json();
-          console.log("ISS position fetched:", issData.iss_position);
-          break; // Success, exit retry loop
-        } else if (issResponse.status === 429 && attempt < maxRetries) {
-          // Rate limited - wait before retry
-          console.warn(
-            `ISS API rate limited, attempt ${attempt}/${maxRetries}`
-          );
-          await new Promise((resolve) => setTimeout(resolve, 2000 * attempt));
-          continue;
-        } else if (issResponse.status >= 500 && attempt < maxRetries) {
-          // Server error - retry with backoff
-          console.warn(
-            `ISS API server error (${issResponse.status}), attempt ${attempt}/${maxRetries}`
-          );
-          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
-          continue;
-        }
-
-        // Non-retryable error or final attempt
-        console.warn(`ISS API returned ${issResponse.status}`);
-        break;
-      } catch (e) {
-        console.warn(`ISS API attempt ${attempt}/${maxRetries} failed:`, e);
-        if (attempt < maxRetries) {
-          await new Promise((resolve) => setTimeout(resolve, 1000 * attempt));
-        }
+    try {
+      const issResponse = await fetch(ISS_API);
+      if (issResponse.ok) {
+        issData = await issResponse.json();
+        console.log("ISS position fetched:", issData.iss_position);
       }
+    } catch (e) {
+      console.warn("Could not fetch ISS position:", e);
     }
 
     // Generate Starlink constellation positions
@@ -172,25 +125,6 @@ export async function GET() {
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     console.error("Error fetching satellite data:", errorMsg);
-
-    // Provide more specific error messages based on error type
-    let userMessage = "Failed to fetch satellite data";
-    if (errorMsg.includes("fetch")) {
-      if (errorMsg.includes("ECONNREFUSED")) {
-        userMessage =
-          "Connection refused - external satellite API may be down or blocking requests";
-      } else if (errorMsg.includes("ENOTFOUND")) {
-        userMessage =
-          "DNS resolution failed - check if satellite API domain is accessible";
-      } else if (errorMsg.includes("timeout")) {
-        userMessage =
-          "Request timed out - satellite API may be slow or unresponsive";
-      } else {
-        userMessage = "Network error - unable to reach satellite API";
-      }
-    }
-
-    console.error(`Satellite API error: ${userMessage}`);
 
     // Return empty CSV header on error
     return new Response(
