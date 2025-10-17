@@ -1,13 +1,8 @@
 import { writable } from "svelte/store";
-import type { BalloonDataset, FetchStatus } from "$lib/types";
+import type { BalloonDataset, BalloonStore } from "$lib/types";
 import { validateBalloonData } from "$lib/utils/parseBalloons";
 
 const HOURS = 24; // Fetch 24 hours of data (00.json to 23.json)
-
-interface BalloonStore {
-  datasets: BalloonDataset[];
-  status: FetchStatus;
-}
 
 function createBalloonStore() {
   const { subscribe, set, update } = writable<BalloonStore>({
@@ -65,6 +60,7 @@ function createBalloonStore() {
    * Fetch all 24 hours of balloon data in parallel
    */
   async function fetchAll(): Promise<void> {
+    // update store to show status as loading
     update((store) => ({
       ...store,
       status: { ...store.status, loading: true, error: null },
@@ -117,10 +113,10 @@ function createBalloonStore() {
     // Initial fetch
     fetchAll();
 
-    // Poll every 5 minutes (300000ms)
+    // Poll every 2 minutes
     pollingInterval = window.setInterval(() => {
       fetchAll();
-    }, 5 * 60 * 1000);
+    }, 2 * 60 * 1000);
 
     // Return cleanup function
     return () => {

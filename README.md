@@ -1,6 +1,6 @@
-# WindBorne Weather Balloon & Wildfire Tracker
+# WindBorne Weather Balloon & Satellite Tracker
 
-A real-time visualization tool that displays WindBorne Systems' weather balloon constellation data alongside active wildfire locations from NASA FIRMS.
+A real-time visualization tool that displays WindBorne Systems' weather balloon constellation data alongside orbital satellite network data including the ISS and Starlink constellation.
 
 ## Live Demo
 
@@ -11,18 +11,17 @@ A real-time visualization tool that displays WindBorne Systems' weather balloon 
 This application visualizes two critical datasets:
 
 1. **WindBorne Weather Balloons**: Live positions from WindBorne's 24-hour rolling constellation of atmospheric monitoring balloons
-2. **Active Wildfires**: Real-time wildfire detections from NASA's Fire Information for Resource Management System (FIRMS)
+2. **Orbital Satellites**: Real-time positions of the International Space Station (ISS) and Starlink constellation from Open-Notify API
 
-## Why Wildfires?
+## Why Satellites?
 
-This combination tells an important story about WindBorne's atmospheric monitoring mission. Weather balloons provide crucial atmospheric data near active fires, which helps with:
+This combination tells an important story about monitoring Earth's systems. Weather balloons provide crucial atmospheric data, while orbital satellites provide connectivity and positioning infrastructure. Together they represent:
 
-- **Fire behavior prediction** - Understanding wind patterns and atmospheric conditions
-- **Smoke dispersion modeling** - Tracking how wildfire smoke moves through the atmosphere
-- **Air quality monitoring** - Measuring the atmospheric impact of active fires
-- **Disaster response** - Supporting firefighting efforts with real-time atmospheric data
+- **Atmospheric Monitoring**: WindBorne's balloon constellation measures atmospheric conditions globally
+- **Orbital Infrastructure**: ISS and Starlink represent humanity's space-based monitoring and communication network
+- **Integrated Earth Systems**: Combining atmospheric and orbital data creates a comprehensive picture of Earth observation capabilities
 
-By visualizing both datasets together, this app demonstrates how WindBorne's network could support climate science and disaster response efforts.
+By visualizing both datasets together, this app demonstrates how WindBorne's network complements global space infrastructure.
 
 ## Tech Stack
 
@@ -35,19 +34,20 @@ By visualizing both datasets together, this app demonstrates how WindBorne's net
 ## Data Sources
 
 - **Balloon Data**: [WindBorne Systems Treasure Hunt API](https://a.windbornesystems.com/treasure/)
+
   - 24 hourly endpoints (00.json through 23.json)
   - Each contains ~1000 balloon positions [lat, lon, altitude]
   - Robust validation filters corrupted entries
 
-- **Wildfire Data**: [NASA FIRMS](https://firms.modaps.eosdis.nasa.gov/)
-  - MODIS Near Real-Time (NRT) active fire detections
-  - Last 24 hours of global wildfire activity
+- **Satellite Data**: [Open-Notify API](http://api.open-notify.org/) (ISS) & Starlink Constellation Data
+  - International Space Station (ISS) real-time position
+  - Starlink constellation positions (generated based on orbital mechanics)
   - Includes brightness, confidence, and timestamp data
 
 ## Features
 
 - **Robust Data Validation**: Filters invalid balloon data points based on strict validation rules
-- **Live Updates**: Polls every 5 minutes for balloons, 10 minutes for wildfires
+- **Live Updates**: Polls every 5 minutes for balloons, 10 minutes for satellites
 - **Performance Optimized**: Uses ~294 requests/hour (well under 1000 limit)
 - **Responsive Design**: Works on desktop and mobile devices
 - **Real-time Statistics**: Shows active data counts and error tracking
@@ -62,22 +62,29 @@ By visualizing both datasets together, this app demonstrates how WindBorne's net
 ### Installation
 
 \`\`\`bash
+
 # Install dependencies
+
 npm install
 
 # Start development server
+
 npm run dev
 
 # Open browser to http://localhost:5173
+
 \`\`\`
 
 ### Build for Production
 
 \`\`\`bash
+
 # Build static site
+
 npm run build
 
 # Preview production build
+
 npm run preview
 \`\`\`
 
@@ -86,19 +93,19 @@ npm run preview
 \`\`\`
 src/
 ├── routes/
-│   └── +page.svelte              # Main page with map and stats
+│ └── +page.svelte # Main page with map and stats
 ├── lib/
-│   ├── stores/
-│   │   ├── balloonData.ts        # Balloon fetching + polling
-│   │   └── wildfireData.ts       # Wildfire fetching + polling
-│   ├── components/
-│   │   ├── Map.svelte            # Leaflet map with markers
-│   │   └── Legend.svelte         # Map legend and explanation
-│   ├── utils/
-│   │   └── parseBalloons.ts      # Data validation logic
-│   └── types/
-│       └── index.ts              # TypeScript types
-└── app.css                       # Global styles
+│ ├── stores/
+│ │ ├── balloonData.ts # Balloon fetching + polling
+│ │ └── satelliteData.ts # Satellite fetching + polling
+│ ├── components/
+│ │ ├── Map.svelte # Leaflet map with markers
+│ │ └── Legend.svelte # Map legend and explanation
+│ ├── utils/
+│ │ └── parseBalloons.ts # Data validation logic
+│ └── types/
+│ └── index.ts # TypeScript types
+└── app.css # Global styles
 \`\`\`
 
 ## Data Validation
@@ -116,8 +123,9 @@ Invalid entries are filtered out and counted to demonstrate robust error handlin
 ## Performance
 
 **Request Budget (per hour):**
+
 - Balloon endpoints: 24 files × 12 requests/hour = 288 requests
-- Wildfire endpoint: 1 file × 6 requests/hour = 6 requests
+- Satellite endpoint: 1 file × 6 requests/hour = 6 requests
 - **Total: 294 requests/hour** ✅ (well under 1000 limit)
 
 ## Deployment
@@ -127,6 +135,7 @@ Deployed on Vercel with automatic deployments from the main branch.
 ## Author
 
 Brett Eastman
+
 - Portfolio: [bretteastman.dev](https://www.bretteastman.dev/)
 - Email: brett.austin.eastman@gmail.com
 
