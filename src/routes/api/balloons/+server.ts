@@ -8,8 +8,9 @@ async function fetchWithTimeout(url: string, timeoutMs: number = 8000) {
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    // Use global fetch (available in Node 18+)
-    const response = await globalThis.fetch(url, { signal: controller.signal });
+    // Use fetch directly (available in Node 18+)
+    // @ts-ignore - fetch is available globally in Node 18+
+    const response = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
     return response;
   } catch (error) {
