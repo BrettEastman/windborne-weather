@@ -61,15 +61,39 @@ for (const funcDir of functionDirs) {
     const content = fs.readFileSync(packageJsonPath, "utf-8");
     console.log(`Verified content: ${content}`);
 
-    // Install dependencies in the function directory
-    console.log(`Installing dependencies in ${funcDir}`);
-    try {
-      execSync("npm install", { cwd: funcDir, stdio: "inherit" });
-      console.log(`Successfully installed dependencies in ${funcDir}`);
-    } catch (err) {
-      console.error(
-        `Error installing dependencies in ${funcDir}: ${err.message}`
+    // Copy node_modules from root to function directory
+    const rootNodeModules = path.join(rootDir, "node_modules");
+    const funcNodeModules = path.join(funcDir, "node_modules");
+
+    if (fs.existsSync(rootNodeModules)) {
+      console.log(
+        `Copying node_modules from ${rootNodeModules} to ${funcNodeModules}`
       );
+      try {
+        // Remove existing node_modules if it exists
+        if (fs.existsSync(funcNodeModules)) {
+          execSync(`rm -rf "${funcNodeModules}"`, { stdio: "inherit" });
+        }
+        // Copy node_modules
+        execSync(`cp -r "${rootNodeModules}" "${funcNodeModules}"`, {
+          stdio: "inherit",
+        });
+        console.log(`Successfully copied node_modules to ${funcDir}`);
+      } catch (err) {
+        console.error(`Error copying node_modules: ${err.message}`);
+      }
+    } else {
+      console.log(
+        "Root node_modules not found, installing dependencies in function directory"
+      );
+      try {
+        execSync("npm install", { cwd: funcDir, stdio: "inherit" });
+        console.log(`Successfully installed dependencies in ${funcDir}`);
+      } catch (err) {
+        console.error(
+          `Error installing dependencies in ${funcDir}: ${err.message}`
+        );
+      }
     }
   } catch (err) {
     console.error(`Error writing ${packageJsonPath}: ${err.message}`);
