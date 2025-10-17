@@ -24,13 +24,21 @@ function createBalloonStore() {
     const url = `/api/balloons?hour=${hour}`;
 
     try {
+      console.log(`[Store] Fetching balloon data from ${url}`);
       const response = await fetch(url);
+      console.log(`[Store] Response status: ${response.status}`);
+
       if (!response.ok) {
-        console.warn(`Failed to fetch ${hourStr}.json: ${response.status}`);
+        const errorText = await response.text();
+        console.error(
+          `Failed to fetch ${hourStr}.json: ${response.status}`,
+          errorText
+        );
         return null;
       }
 
       const rawData = await response.json();
+      console.log(`[Store] Received data for ${hourStr}:`, rawData);
 
       // Validate data
       if (!Array.isArray(rawData)) {

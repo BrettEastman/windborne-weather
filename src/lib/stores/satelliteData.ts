@@ -85,14 +85,23 @@ function createSatelliteStore() {
     }));
 
     try {
+      console.log("[Store] Fetching satellite data from /api/satellites");
       const response = await fetch("/api/satellites");
+      console.log(`[Store] Satellite response status: ${response.status}`);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          `[Store] Satellite API error: ${response.status}`,
+          errorText
+        );
         throw new Error(`Satellite API returned ${response.status}`);
       }
 
       const csvText = await response.text();
+      console.log(`[Store] Received CSV data, length: ${csvText.length}`);
       const satellites = parseCSV(csvText);
+      console.log(`[Store] Parsed ${satellites.length} satellites from CSV`);
 
       update(() => ({
         satellites,
